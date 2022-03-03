@@ -1,0 +1,125 @@
+---
+title: "Web Scrapping Project R Markdown"
+author: "Salman Virani"
+date: "3/3/2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is my first project in the domain of data science. As I am developing skills of using R, I am always open to constructive feedback. 
+
+A bit of necessary steps and then lets dive right into web scrapping!
+
+```{r}
+sessionInfo()
+```
+
+This project inovlves scrapping some data for imdb top 250 movies webpage. Our main package to be used here is 'rvest'. We will scrape the data from imdb and create a R data frame from it, so that we are capable of doing some analysis on it. 
+
+```{r}
+library(rvest)
+library(stringr)
+library(tibble)
+```
+
+For more information on rvest package, try running '?rvest'. For vignettes in this package, try 'vignette(package = "rvest)'. 
+
+```{r}
+url <- "https://www.imdb.com/chart/top/"
+
+top_movies <- read_html(url)
+```
+
+We need R to read our webpage, and that's where 'read_html' from rvest comes in the picture. 
+
+### Extract Titles
+
+'html_nodes' allows us to access the tags in the html. '#' refers to the id within the tag, and '.' refers to the class within the tag. 'a' refers to the links within the tag. 'html_node' instead of 'html_nodes' will return only the first instance. Stringr package allows us to do some string manipulations in our data. Lapply function lets us loop through every vector in our 'titles' list and retreive the second element, which is actually the name of the movie. The code extracts the name of the top 250 movies on imdb as of 03/03/2022. 
+
+
+```{r}
+titles <- top_movies %>%
+  html_nodes("tbody tr td.titleColumn") %>%
+  html_text() %>%
+  str_trim() %>%
+  str_split("\n") %>%
+  lapply(function(movie){
+  movie[2]
+}) %>%
+  unlist() %>%
+  str_trim()
+
+head(titles)
+```
+
+### Extract Years
+
+Almost the same code gives us the years of release of the top 250 movies. Instead of retreiving the second element, this time we retrieve the third element. However, the data is a bit messy, we dont want the parentheses and want the years as integers. 'str_replace' and 'as.integer' comes to rescue for this task.   
+
+```{r}
+years <- top_movies %>%
+  html_nodes("tbody tr td.titleColumn") %>%
+  html_text() %>%
+  str_trim() %>%
+  str_split("\n") %>%
+  lapply(function(movie){
+  movie[3]
+}) %>%
+  unlist() %>%
+  str_trim() %>%
+  str_replace("\\(","") %>%
+  str_replace("\\)","") %>%
+  as.integer()
+
+head(years)
+```
+
+### Create Ranks
+
+```{r}
+ranks <- 1:250
+```
+
+### Extract Ratings
+
+```{r}
+ratings <- top_movies %>%
+  html_nodes(".imdbRating strong") %>%
+  html_text() %>%
+  as.numeric()
+
+head(ratings)  
+```
+
+### Create a dataframe
+
+We have a data frame ready, and now we can run our quantitative analysis the way we want!
+
+```{r}
+top_movies_tibble <- tibble(
+  Rank = ranks,
+  Title = titles,
+  Year = years,
+  Rating = ratings
+)
+
+head(top_movies_tibble)
+```
+
+### Just a little bit more: Extracting Links
+
+We have already used the 'html_text' function to extract texts. This time we a link from one of the attributes, so we use the 'html_attr' function. The '.' in the 'paste0' function tells R to put whatever has been piped before the function as its argument. The very first links has been outputted, so you can check that it belongs to 'The Shawshank Redemption'. 
+
+```{r}
+links <- top_movies %>%
+  html_node("tbody tr td.titleColumn a") %>%
+  html_attr("href") %>%
+  paste0("https://www.imdb.com/", .)
+
+links[1]
+```
