@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-This is my first project in the domain of data science. As I am developing skills of using R, I am always open to constructive feedback. 
+This is my first project in the domain of web scrapping. As I am developing skills of using R, I am always open to constructive feedback. 
 
 A bit of necessary steps and then lets dive right into web scrapping!
 
